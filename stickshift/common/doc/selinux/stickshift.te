@@ -1,0 +1,275 @@
+policy_module(stickshift, 1.0)
+
+########################################
+#
+# Declarations
+#
+
+type mcollectived_t;
+type mcollectived_exec_t;
+init_daemon_domain(mcollectived_t, mcollectived_exec_t)
+init_ranged_daemon_domain(mcollectived_t, mcollectived_exec_t, s0 - mcs_systemhigh)
+
+type mcollectived_log_t;
+logging_log_file(mcollectived_log_t)
+
+type mcollectived_tmp_t;
+files_tmp_file(mcollectived_tmp_t)
+
+type mcollectived_var_run_t;
+files_pid_file(mcollectived_var_run_t)
+
+type mcollectived_lock_t;
+files_lock_file(mcollectived_lock_t)
+
+type stickshift_t;
+type stickshift_exec_t;
+application_domain(stickshift_t, stickshift_exec_t)
+role system_r types stickshift_t;
+
+type stickshift_tmp_t;
+files_tmp_file(stickshift_tmp_t)
+
+mcs_process_set_categories(stickshift_t)
+
+type stickshift_file_t;
+files_type(stickshift_file_t)
+
+########################################
+#
+# mcollectived local policy
+#
+#permissive stickshift_t;
+unconfined_domain(stickshift_t)
+
+allow stickshift_t self:capability { setuid audit_write dac_override sys_nice chown fsetid setgid fowner sys_ptrace };
+allow stickshift_t self:process { execmem getcap setpgid setsched signal_perms setexec setfscreate };
+allow stickshift_t self:fifo_file rw_fifo_file_perms;
+allow stickshift_t self:key write;
+allow stickshift_t self:netlink_audit_socket { nlmsg_relay create };
+allow stickshift_t self:sem create_sem_perms;
+allow stickshift_t self:shm create_shm_perms;
+allow stickshift_t self:tcp_socket create_stream_socket_perms;
+allow stickshift_t self:udp_socket create_socket_perms;
+allow stickshift_t self:unix_dgram_socket create_socket_perms;
+allow stickshift_t self:unix_stream_socket { connectto create_stream_socket_perms};
+
+kernel_read_kernel_sysctls(stickshift_t)
+kernel_read_system_state(stickshift_t)
+
+manage_dirs_pattern(stickshift_t, stickshift_tmp_t, stickshift_tmp_t)
+manage_files_pattern(stickshift_t, stickshift_tmp_t, stickshift_tmp_t)
+manage_sock_files_pattern(stickshift_t, stickshift_tmp_t, stickshift_tmp_t)
+manage_lnk_files_pattern(stickshift_t, stickshift_tmp_t, stickshift_tmp_t)
+files_tmp_filetrans(stickshift_t, stickshift_tmp_t, { file dir sock_file })
+can_exec(stickshift_t, stickshift_tmp_t)
+
+manage_files_pattern(stickshift_t, stickshift_file_t, stickshift_file_t)
+manage_sock_files_pattern(stickshift_t, stickshift_file_t, stickshift_file_t)
+manage_dirs_pattern(stickshift_t, stickshift_file_t, stickshift_file_t)
+manage_lnk_files_pattern(stickshift_t, stickshift_file_t, stickshift_file_t)
+can_exec(stickshift_t, stickshift_file_t)
+
+corecmd_exec_bin(stickshift_t)
+corecmd_exec_shell(stickshift_t)
+corecmd_exec_all_executables(stickshift_t)
+
+corenet_tcp_bind_all_ports(stickshift_t)
+corenet_tcp_connect_all_ports(stickshift_t)
+
+dev_read_kmsg(stickshift_t)
+dev_read_rand(stickshift_t)
+dev_read_raw_memory(stickshift_t)
+dev_read_urand(stickshift_t)
+dev_getattr_all_blk_files(stickshift_t)
+dev_getattr_all_chr_files(stickshift_t)
+
+term_getattr_all_ptys(stickshift_t)
+term_getattr_all_ttys(stickshift_t)
+
+domain_read_all_domains_state(stickshift_t)
+domain_getattr_all_sockets(stickshift_t)
+domain_getattr_all_pipes(stickshift_t)
+
+files_getattr_all_sockets(stickshift_t)
+files_getattr_all_files(stickshift_t)
+files_getattr_all_pipes(stickshift_t)
+files_read_etc_files(stickshift_t)
+files_read_etc_runtime_files(stickshift_t)
+files_read_usr_files(stickshift_t)
+files_read_var_lib_files(stickshift_t)
+
+application_exec_all(stickshift_t)
+
+auth_use_nsswitch(stickshift_t)
+
+logging_send_syslog_msg(stickshift_t)
+
+init_stream_connect(stickshift_t)
+
+miscfiles_read_localization(stickshift_t)
+miscfiles_read_fonts(stickshift_t)
+
+selinux_compute_access_vector(stickshift_t)
+
+optional_policy(`
+    abrt_stream_connect(stickshift_t)
+')
+
+optional_policy(`
+    apache_exec_modules(stickshift_t)
+    apache_list_modules(stickshift_t)
+    apache_read_config(stickshift_t)
+')
+
+optional_policy(`
+    colord_read_lib_files(stickshift_t)
+')
+
+optional_policy(`
+    cups_stream_connect(stickshift_t)
+')
+
+optional_policy(`
+    dbus_system_bus_client(stickshift_t)
+')
+
+optional_policy(`
+    mysql_read_config(stickshift_t)
+')
+
+optional_policy(`
+    setroubleshoot_stream_connect(stickshift_t)
+')
+
+optional_policy(`
+    systemd_dbus_chat_logind(stickshift_t)
+    systemd_write_inherited_logind_sessions_pipes(stickshift_t)
+')
+
+########################################
+#
+# stickshift local policy
+#
+permissive mcollectived_t;
+allow mcollectived_t self:capability { chown dac_override fsetid kill };
+allow mcollectived_t self:process { signal_perms setcap setexec };
+allow mcollectived_t self:fifo_file rw_fifo_file_perms;
+allow mcollectived_t self:unix_stream_socket { connectto create_stream_socket_perms };
+allow mcollectived_t self:tcp_socket create_stream_socket_perms;
+allow mcollectived_t self:udp_socket create_socket_perms;
+
+domtrans_pattern(mcollectived_t, stickshift_exec_t, stickshift_t) 
+allow mcollectived_t stickshift_t:process { signull signal sigkill };
+
+manage_dirs_pattern(mcollectived_t, stickshift_file_t, stickshift_file_t)
+manage_files_pattern(mcollectived_t, stickshift_file_t, stickshift_file_t)
+manage_lnk_files_pattern(mcollectived_t, stickshift_file_t, stickshift_file_t)
+manage_sock_files_pattern(mcollectived_t, stickshift_file_t, stickshift_file_t)
+
+manage_files_pattern(mcollectived_t, mcollectived_log_t, mcollectived_log_t)
+manage_dirs_pattern(mcollectived_t, mcollectived_log_t, mcollectived_log_t)
+manage_lnk_files_pattern(mcollectived_t, mcollectived_log_t, mcollectived_log_t)
+logging_log_filetrans(mcollectived_t, mcollectived_log_t, { file dir })
+
+manage_files_pattern(mcollectived_t, mcollectived_tmp_t, mcollectived_tmp_t)
+manage_dirs_pattern(mcollectived_t, mcollectived_tmp_t, mcollectived_tmp_t)
+manage_lnk_files_pattern(mcollectived_t, mcollectived_tmp_t, mcollectived_tmp_t)
+files_tmp_filetrans(mcollectived_t, mcollectived_tmp_t, { file dir })
+
+manage_files_pattern(mcollectived_t, mcollectived_lock_t, mcollectived_lock_t)
+manage_dirs_pattern(mcollectived_t, mcollectived_lock_t, mcollectived_lock_t)
+manage_lnk_files_pattern(mcollectived_t, mcollectived_lock_t, mcollectived_lock_t)
+files_lock_filetrans(mcollectived_t, mcollectived_lock_t, { file dir })
+
+manage_files_pattern(mcollectived_t, mcollectived_var_run_t, mcollectived_var_run_t)
+manage_dirs_pattern(mcollectived_t, mcollectived_var_run_t, mcollectived_var_run_t)
+manage_lnk_files_pattern(mcollectived_t, mcollectived_var_run_t, mcollectived_var_run_t)
+files_pid_filetrans(mcollectived_t, mcollectived_var_run_t, { file dir })
+
+kernel_getattr_message_if(stickshift_t)
+kernel_read_network_state(stickshift_t)
+kernel_read_software_raid_state(stickshift_t)
+kernel_read_kernel_sysctls(mcollectived_t)
+kernel_read_system_state(mcollectived_t)
+
+corecmd_exec_bin(mcollectived_t)
+corecmd_exec_shell(mcollectived_t)
+corecmd_bin_entry_type(stickshift_t)
+
+corenet_tcp_connect_amqp_port(mcollectived_t)
+
+dev_read_urand(mcollectived_t)
+
+domain_use_interactive_fds(mcollectived_t)
+
+files_read_etc_files(mcollectived_t)
+files_read_etc_runtime_files(mcollectived_t)
+
+miscfiles_read_localization(mcollectived_t)
+
+selinux_set_parameters(mcollectived_t)
+selinux_validate_context(mcollectived_t)
+
+usermanage_domtrans_useradd(mcollectived_t)
+
+logging_send_syslog_msg(mcollectived_t)
+
+sysnet_read_config(mcollectived_t)
+
+domain_read_all_domains_state(mcollectived_t)
+
+require {
+    type useradd_t;
+}
+
+manage_dirs_pattern(useradd_t, stickshift_file_t, stickshift_file_t)
+manage_files_pattern(useradd_t, stickshift_file_t, stickshift_file_t)
+manage_lnk_files_pattern(useradd_t, stickshift_file_t, stickshift_file_t)
+
+optional_policy(`
+    gen_require(`
+        type dontdoit_t;
+        type httpd_passenger_helper_t;
+            type http_cache_port_t;
+        type httpd_t;
+    ')
+
+    allow httpd_passenger_helper_t self:capability dac_override;
+    allow httpd_passenger_helper_t http_cache_port_t:tcp_socket name_connect;
+    manage_dirs_pattern(httpd_t, stickshift_file_t, stickshift_file_t)
+    manage_files_pattern(httpd_t, stickshift_file_t, stickshift_file_t)
+    manage_lnk_files_pattern(httpd_t, stickshift_file_t, stickshift_file_t)
+')
+
+gen_require(`
+    type sshd_t;
+')
+read_files_pattern(sshd_t, stickshift_file_t, stickshift_file_t)
+
+#for proxy server to find applications to serve
+gen_require(`
+    type httpd_t;
+    class dir search;
+')
+
+allow httpd_t stickshift_file_t:dir search;
+
+#for ssh login
+require {
+    type unconfined_t;
+    type stickshift_t;
+    class process transition;
+}
+
+#============= unconfined_t ==============
+allow unconfined_t stickshift_t:process transition;
+
+#DHCP networking==========================
+require {
+    type ephemeral_port_t;
+    type dhcpc_t;
+    class udp_socket name_bind;
+}
+
+allow dhcpc_t ephemeral_port_t:udp_socket name_bind;

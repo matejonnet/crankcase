@@ -56,13 +56,16 @@ end
 
 task :build_setup do
   sh "sudo yum install -y vim git wget tito ruby rubygems java-1.6.0-openjdk jpackage-utils java-1.6.0-openjdk-devel emacs fedora-kickstarts livecd-tools tig mock"
-  sh "sudo usermod -a -G mock #{Etc.getlogin} && newgrp mock"
+  sh "mkdir -p ~/.openshift/"
+  sh "echo 'libra_server=localhost' >> ~/.openshift/express.conf"
+  sh "echo 'default_rhlogin=admin' >> ~/.openshift/express.conf"
+  sh "sudo usermod -a -G mock #{Etc.getlogin}"
 end
 
 task :build do
   mkdir_p "#{rpmdir}/noarch"
   
-  specs   = Dir.glob("#{basedir}/**/*.spec")
+  specs = Dir.glob("#{basedir}/**/*.spec")
   spec_revisions = {}
   specs.delete_if do |spec|
     if skip_specs.select { |s| spec.match(s) }.length > 0
@@ -110,20 +113,23 @@ end
 task :prodcd => [:clean, :prodbuild, :livecd] do
 end
 
-task :prodinstall => [:clean, :prodbuild, :install] do
+task :prodinstall => [:clean, :prodbuild, :install_broker, :install_node] do
 end
 
 task :devcd => [:build, :livecd] do
 end
 
-task :devinstall => [:build, :install] do
+task :devbroker => [:build, :install_broker] do
+end
+
+task :devnode => [:build, :install_node] do
 end
 
 task :livecd do
   mkdir_p remix_dir
   remix_ks = "openshift-origin-remix.ks"
   unless File.exist? "#{remix_dir}/#{remix_ks}"
-    ks_data = File.read("#{basedir}/build/openshift-origin/kickstart/#{remix_ks}").gsub(/#ADDITIONAL REPOS/, "repo --name=local-build --baseurl=file://#{rpmdir}/noarch")
+    ks_data = File.read("#{basedir}/build/openshift-origin-broker/kickstart/#{remix_ks}").gsub(/#ADDITIONAL REPOS/, "repo --name=local-build --baseurl=file://#{rpmdir}/noarch")
     File.open("#{remix_dir}/#{remix_ks}", 'w') do |out|
       out << ks_data
     end
@@ -142,14 +148,22 @@ task :createrepo do
   sh "sudo cp #{rpmdir}/ss.repo /etc/yum.repos.d/"
 end
 
-task :install do
+task :install_broker do
   sh "sudo service httpd stop"
   sh "sudo service stickshift-broker stop"
   sh "sudo yum erase -y stickshift-* rubygem-stickshift-*"
   sh "sudo yum clean metadata"
-  sh "sudo yum install -y openshift-origin cartridge-* --skip-broken"
+  sh "sudo yum install -y openshift-origin-broker openshift-origin-node cartridge-* --skip-broken"
   sh "sudo service httpd start"
   sh "sudo service stickshift-broker start"
+end
+
+task :install_node do
+  sh "sudo service httpd stop"
+  sh "sudo yum erase -y openshift-origin-node cartridge-* rubygem-stickshift-node rubygem-stickshift-abstract rubygem-stickshift-common"
+  sh "sudo yum clean metadata"
+  sh "sudo yum install -y openshift-origin-node cartridge-* --skip-broken"
+  sh "sudo service httpd start"
 end
 
 task :clean do

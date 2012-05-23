@@ -2,6 +2,7 @@
 %global gemdir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)
 %global gemname stickshift-node
 %global geminstdir %{gemdir}/gems/%{gemname}-%{version}
+%define appdir %{_localstatedir}/lib/stickshift
 
 Summary:        Cloud Development Node
 Name:           rubygem-%{gemname}
@@ -45,19 +46,19 @@ This contains the Cloud Development Node packaged as a ruby site library.
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_bindir}/ss
+#mkdir -p %{buildroot}%{_bindir}/ss
 mkdir -p %{buildroot}%{_sysconfdir}/stickshift
 mkdir -p %{buildroot}%{gemdir}
 mkdir -p %{buildroot}%{ruby_sitelib}
-mkdir -p %{_bindir}
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{appdir}
+mkdir -p %{buildroot}%{_sysconfdir}/httpd/conf.d
+mkdir -p %{buildroot}%{appdir}/.httpd.d
+ln -sf %{appdir}/.httpd.d %{buildroot}%{_sysconfdir}/httpd/conf.d/stickshift
 
 # Build and install into the rubygem structure
 gem build %{gemname}.gemspec
 gem install --local --install-dir %{buildroot}%{gemdir} --force %{gemname}-%{version}.gem
-
-# Move the gem binaries to the standard filesystem location
-mv %{buildroot}%{gemdir}/bin/* %{buildroot}%{_bindir}
-rm -rf %{buildroot}%{gemdir}/bin
 
 # Move the gem configs to the standard filesystem location
 mv %{buildroot}%{geminstdir}/conf/* %{buildroot}%{_sysconfdir}/stickshift
@@ -69,6 +70,7 @@ ln -s %{geminstdir}/lib/%{gemname}.rb %{buildroot}%{ruby_sitelib}
 #move the shell binaries into proper location
 mv %{buildroot}%{geminstdir}/misc/bin/* %{buildroot}%{_bindir}/
 rm -rf %{buildroot}%{geminstdir}/misc
+mv httpd/000000_stickshift_node.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/
 
 %clean
 rm -rf %{buildroot}                                
@@ -83,6 +85,9 @@ rm -rf %{buildroot}
 %{gemdir}/specifications/%{gemname}-%{version}.gemspec
 %{_sysconfdir}/stickshift
 %{_bindir}/*
+%attr(0750,-,-) %{_sysconfdir}/httpd/conf.d/stickshift
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/000000_stickshift_node.conf
+%attr(0755,-,-) %{_var}/lib/stickshift
 
 %files -n ruby-%{gemname}
 %{ruby_sitelib}/%{gemname}
@@ -90,6 +95,7 @@ rm -rf %{buildroot}
 
 %post
 echo "/usr/bin/ss-trap-user" >> /etc/shells
+restorecon -r %{_var}/lib/stickshift
 
 # copying this file in the post hook so that this file can be replaced by rhc-node
 # copy this file only if it doesn't already exist

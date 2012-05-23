@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "stickshift-node"
   s.files       = Dir[lib_dir] + Dir[bin_dir] + Dir[conf_dir] + Dir[test_dir] + Dir[misc_dir]
   s.files       += %w(README.md Rakefile Gemfile stickshift-node.spec stickshift-node.gemspec COPYRIGHT LICENSE)
-  s.executables = Dir[bin_dir].map {|binary| File.basename(binary)}
+  #s.executables = Dir[bin_dir].map {|binary| File.basename(binary)}
   s.require_paths = ["lib"]
   s.add_dependency("json")
   s.add_dependency("parseconfig")
